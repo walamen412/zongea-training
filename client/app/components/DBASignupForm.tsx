@@ -56,7 +56,8 @@ export default function DBASignupForm() {
       await new Promise((r) => setTimeout(r, 400));
       setSubmitted(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Submission failed. Please try again.");
+      const errorMessage = err instanceof Error ? err.message : "Submission failed. Please try again.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-import DBASignupForm from "./components/DBASignupForm";
+import DBASignupForm from "./components/DBASignupForm"
 
 export default function Page() {
   return (
@@ -42,7 +42,7 @@ export default function Page() {
       </section>
 
       {/* MAIN GRID */}
-      <section className="px-6 py-14 bg-[#f8fafc]">
+      <section className="px-6 py-14">
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-10 md:grid-cols-2 md:gap-12">
           {/* INFO */}
           <div>
@@ -62,10 +62,9 @@ export default function Page() {
                 ⚠ Commitment Required
               </strong>
               <p className="mt-1 text-[0.9rem] leading-[1.6] text-[#1a2640]">
-                Once the class begins, 
-                <p className="text-[#c9952a]"><strong>withdrawal is not permitted</strong>. You must</p>
-                <p>commit to completing the full program. Only register if you are fully</p>
-                <p>prepared to dedicate the time and effort required.</p>
+                Once the class begins, <strong>withdrawal is not permitted</strong>. You must
+                commit to completing the full program. Only register if you are fully
+                prepared to dedicate the time and effort required.
               </p>
             </div>
 
@@ -73,7 +72,7 @@ export default function Page() {
               What to expect:
             </p>
 
-            <ul className="mt-4 space-y-4.5">
+            <ul className="mt-4 space-y-6.5">
               {[
                 "In-depth, technically rigorous instruction from an industry professional",
                 "Weekend sessions every Saturday & Sunday at 5 PM Liberia time",

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 type FormState = {
   fullname: string;
@@ -10,6 +10,9 @@ type FormState = {
   affiliation: "" | "Internal Team Member" | "Partner Organization" | "Other";
   motivation: string;
   commit: boolean;
+
+  // simple anti-spam honeypot (hidden)
+  website: string;
 };
 
 export default function DBASignupForm() {
@@ -21,13 +24,27 @@ export default function DBASignupForm() {
     affiliation: "",
     motivation: "",
     commit: false,
+    website: "",
   });
 
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const canSubmit = useMemo(() => {
+    return (
+      form.fullname.trim().length > 0 &&
+      form.email.trim().includes("@") &&
+      Boolean(form.affiliation) &&
+      form.commit &&
+      !loading
+    );
+  }, [form.fullname, form.email, form.affiliation, form.commit, loading]);
+
   const validate = () => {
+    // honeypot (bots often fill hidden fields)
+    if (form.website.trim().length > 0) return "Submission blocked.";
+
     if (!form.fullname.trim()) return "Please enter your full name.";
     if (!form.email.trim() || !form.email.includes("@"))
       return "Please enter a valid email address.";
@@ -50,13 +67,35 @@ export default function DBASignupForm() {
     setLoading(true);
 
     try {
-      // Later you will point this to your Next.js API route:
-      // await fetch("/api/dba-signup", {...})
-      // For now: local success
-      await new Promise((r) => setTimeout(r, 400));
+      const payload = {
+        fullname: form.fullname.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        role: form.role.trim(),
+        affiliation: form.affiliation,
+        motivation: form.motivation.trim(),
+        commit: form.commit,
+        website: form.website, // honeypot
+      };
+
+      // IMPORTANT: call your Next.js API route (no CORS)
+      const res = await fetch("/api/dba-signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({ ok: false, error: "Invalid response" } as { ok?: boolean; error?: string }));
+
+      if (!res.ok || !data?.ok) {
+        setError(data?.error || "Submission failed. Please try again.");
+        return;
+      }
+
       setSubmitted(true);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Submission failed. Please try again.";
+      const errorMessage =
+        err instanceof Error ? err.message : "Submission failed. Please try again.";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -75,12 +114,28 @@ export default function DBASignupForm() {
           </p>
 
           {error ? (
-            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[0.9rem] text-red-900">
+            <div
+              className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[0.9rem] text-red-900"
+              role="alert"
+            >
               {error}
             </div>
           ) : null}
 
-          <form onSubmit={onSubmit} className="mt-7 space-y-5">
+          <form onSubmit={onSubmit} className="mt-7 space-y-5" noValidate>
+            {/* Honeypot field (hidden). Keep it out of view for humans. */}
+            <div className="hidden" aria-hidden="true">
+              <label htmlFor="website">Website</label>
+              <input
+                id="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={form.website}
+                onChange={(e) => setForm((p) => ({ ...p, website: e.target.value }))}
+              />
+            </div>
+
             <Field label="Full Name" htmlFor="fullname">
               <input
                 id="fullname"
@@ -89,6 +144,7 @@ export default function DBASignupForm() {
                 value={form.fullname}
                 onChange={(e) => setForm((p) => ({ ...p, fullname: e.target.value }))}
                 className="w-full rounded-lg border-[1.5px] border-[#ddd5c4] bg-[#fdfaf6] px-3.5 py-2.5 text-[0.95rem] text-[#1a2640] outline-none transition focus:border-[#c9952a] focus:bg-white focus:shadow-[0_0_0_3px_rgba(201,149,42,0.12)]"
+                required
               />
             </Field>
 
@@ -100,6 +156,7 @@ export default function DBASignupForm() {
                 value={form.email}
                 onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                 className="w-full rounded-lg border-[1.5px] border-[#ddd5c4] bg-[#fdfaf6] px-3.5 py-2.5 text-[0.95rem] text-[#1a2640] outline-none transition focus:border-[#c9952a] focus:bg-white focus:shadow-[0_0_0_3px_rgba(201,149,42,0.12)]"
+                required
               />
             </Field>
 
@@ -130,9 +187,13 @@ export default function DBASignupForm() {
                 id="affiliation"
                 value={form.affiliation}
                 onChange={(e) =>
-                  setForm((p) => ({ ...p, affiliation: e.target.value as FormState["affiliation"] }))
+                  setForm((p) => ({
+                    ...p,
+                    affiliation: e.target.value as FormState["affiliation"],
+                  }))
                 }
                 className="w-full appearance-none rounded-lg border-[1.5px] border-[#ddd5c4] bg-[#fdfaf6] px-3.5 py-2.5 text-[0.95rem] text-[#1a2640] outline-none transition focus:border-[#c9952a] focus:bg-white focus:shadow-[0_0_0_3px_rgba(201,149,42,0.12)]"
+                required
               >
                 <option value="">— Select one —</option>
                 <option>Internal Team Member</option>
@@ -169,26 +230,26 @@ export default function DBASignupForm() {
                 onChange={(e) => setForm((p) => ({ ...p, commit: e.target.checked }))}
                 className="mt-0.5 h-[18px] w-[18px] cursor-pointer accent-[#c9952a]"
               />
-              <label
-                htmlFor="commit"
-                className="text-[0.85rem] leading-[1.5] text-[#6b7a95]"
-              >
-                I understand that <span className="font-semibold text-[#1a2640]">once the class starts, I cannot withdraw</span>.
-                I am fully committed to completing the entire program.
+              <label htmlFor="commit" className="text-[0.85rem] leading-[1.5] text-[#6b7a95]">
+                I understand that{" "}
+                <span className="font-semibold text-[#1a2640]">
+                  once the class starts, I cannot withdraw
+                </span>
+                . I am fully committed to completing the entire program.
               </label>
             </div>
 
             <button
               type="submit"
-              disabled={loading}
-              className="mt-2 w-full rounded-lg bg-[#0a1628] px-4 py-3.5 text-[1rem] font-semibold tracking-[0.3px] text-white transition hover:bg-[#0f2044] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={!canSubmit}
+              className="mt-2 w-full rounded-lg bg-[#0a1628] px-4 py-3.5 text-[1rem] font-semibold tracking-[0.3px] text-white transition hover:bg-[#0f2044] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {loading ? "Submitting..." : "Submit Registration →"}
             </button>
           </form>
         </>
       ) : (
-        <div className="py-6 text-center">
+        <div className="py-6 text-center" role="status" aria-live="polite">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#e8f5e9]">
             <svg
               width="24"

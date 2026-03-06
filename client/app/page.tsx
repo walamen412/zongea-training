@@ -37,7 +37,7 @@ export default function Page() {
           <DetailItem icon="calendar">Saturdays &amp; Sundays</DetailItem>
           <DetailItem icon="clock">5:00 PM Liberia Time</DetailItem>
           <DetailItem icon="users">Industry Instructor</DetailItem>
-          <DetailItem icon="cap">Start Date: TBD</DetailItem>
+          <DetailItem icon="cap">Start Date: March 21, 2026</DetailItem>
         </div>
       </section>
 

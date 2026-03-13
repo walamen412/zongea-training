@@ -644,7 +644,8 @@ export default function Page() {
           </div>
 
           <div className="form-shell">
-            <DBASignupForm />
+            {/* <DBASignupForm /> */}
+            <h2 className="font-bold text-center">Registration Clossed </h2>
           </div>
         </div>
       </section>
